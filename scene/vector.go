@@ -47,3 +47,7 @@ func (v Vector) Normalise() Vector {
 		Y: v.Y / m,
 	}
 }
+
+func (v Vector) HeadingAngle() float64 {
+	return math.Atan2(v.Y, v.X)
+}
