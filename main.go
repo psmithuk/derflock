@@ -48,6 +48,8 @@ func main() {
 	s := scene.NewScene(200, width, height)
 
 	s.Boids[0].BoidKind = scene.BoidKind_LEADER
+	s.Boids[1].BoidKind = scene.BoidKind_LEADER
+	s.Boids[2].BoidKind = scene.BoidKind_LEADER
 
 	// main loop
 	for running {
@@ -60,6 +62,12 @@ func main() {
 				switch t.Keysym.Sym {
 				case sdl.K_q:
 					running = false
+				case sdl.K_1:
+					s.ShowHUD = !s.ShowHUD
+				case sdl.K_2:
+					s.ShowGrid = !s.ShowGrid
+				case sdl.K_3:
+					s.ShowActivePads = !s.ShowActivePads
 					// TODO: keyboard actions
 				}
 			}

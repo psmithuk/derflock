@@ -3,6 +3,7 @@ package scene
 import (
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -29,11 +30,13 @@ type Boid struct {
 func NewRandomBoid() Boid {
 	b := Boid{}
 
-	b.X = rand.Float64()
-	b.Y = rand.Float64()
+	rand.Seed(time.Now().UnixNano())
+
+	b.X = rand.NormFloat64()
+	b.Y = rand.NormFloat64()
 	b.Velocity = Vector{}
-	b.Velocity.X = (rand.Float64() * 2.0) - 1.0
-	b.Velocity.Y = (rand.Float64() * 2.0) - 1.0
+	b.Velocity.X = rand.NormFloat64()
+	b.Velocity.Y = rand.NormFloat64()
 	b.PixelSize = BOID_DEFAULT_SIZE
 
 	return b

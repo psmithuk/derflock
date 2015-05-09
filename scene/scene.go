@@ -9,6 +9,7 @@ import (
 
 type Scene struct {
 	Boids            []Boid
+	Triggers         []Trigger
 	Speed            float64
 	Distance         float64
 	Radius           float64
@@ -16,11 +17,12 @@ type Scene struct {
 	AlignmentWeight  float64
 	SeparationWeight float64
 
+	ShowGrid       bool
+	ShowHUD        bool
+	ShowActivePads bool
+
 	Width, Height int32
 	TheBigBang    time.Time
-}
-
-type Trigger struct {
 }
 
 func NewScene(boidCount int32, w, h int32) Scene {
@@ -41,10 +43,13 @@ func NewScene(boidCount int32, w, h int32) Scene {
 	s.AlignmentWeight = 1
 	s.SeparationWeight = 0.1
 
+	s.Triggers = NewTriggerGrid(8, 0.8)
+
 	return s
 }
 
 func (s *Scene) Draw(w, h int32, renderer *sdl.Renderer) {
+	s.drawTriggers(w, h, renderer)
 	s.drawBoids(w, h, renderer)
 }
 
@@ -54,10 +59,13 @@ func (s *Scene) drawBoids(w, h int32, renderer *sdl.Renderer) {
 	}
 }
 
-func (s *Scene) UpdateBoids() {
-	// TODO: update Boids
+func (s *Scene) drawTriggers(w, h int32, renderer *sdl.Renderer) {
+	for i := range s.Triggers {
+		s.Triggers[i].drawTrigger(w, h, renderer, s.ShowActivePads, s.ShowGrid)
+	}
+}
 
-	//alignment := Vector{}
+func (s *Scene) UpdateBoids() {
 
 	//For each boid update positions
 	for i, b := range s.Boids {
@@ -188,8 +196,6 @@ func (s *Scene) SeparationForBoid(i int) Vector {
 				sum.X += diff.X
 				sum.Y += diff.Y
 
-				//separation.X = separation.X - ((distance.X / distance.Magnitude()) / d)
-				//separation.Y = separation.Y - ((distance.Y / distance.Magnitude()) / d)
 				count += 1
 			}
 		}
@@ -243,7 +249,18 @@ func (s *Scene) AlignmentForBoid(i int) Vector {
 }
 
 func (s *Scene) UpdateTriggers() {
-	// TODO: update triggers and Trigger state
+	for _, boid := range s.Boids {
+		// only trigger the leaders
+		if boid.BoidKind == BoidKind_LEADER {
+			for j, t := range s.Triggers {
+				if boid.X >= t.X1 && boid.X <= t.X2 && boid.Y >= t.Y1 && boid.Y <= t.Y2 {
+					s.Triggers[j].Active = true
+				} else {
+					s.Triggers[j].Active = false
+				}
+			}
+		}
+	}
 }
 
 func (s *Scene) AddBoid(b Boid) {
