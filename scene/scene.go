@@ -8,10 +8,13 @@ import (
 )
 
 type Scene struct {
-	Boids    []Boid
-	Speed    float64
-	Distance float64
-	Radius   float64
+	Boids            []Boid
+	Speed            float64
+	Distance         float64
+	Radius           float64
+	CohesionWeight   float64
+	AlignmentWeight  float64
+	SeparationWeight float64
 
 	Width, Height int32
 	TheBigBang    time.Time
@@ -30,9 +33,13 @@ func NewScene(boidCount int32, w, h int32) Scene {
 		s.Boids[i] = NewRandomBoid()
 	}
 
-	s.Speed = 0.005
-	s.Distance = 0.02
+	s.Speed = 0.004
+	s.Distance = 0.01
 	s.Radius = 0.1
+
+	s.CohesionWeight = 0.1
+	s.AlignmentWeight = 1
+	s.SeparationWeight = 0.1
 
 	return s
 }
@@ -49,25 +56,29 @@ func (s *Scene) drawBoids(w, h int32, renderer *sdl.Renderer) {
 
 func (s *Scene) UpdateBoids() {
 	// TODO: update Boids
-	cohesion := Vector{}
+
 	//alignment := Vector{}
-	//separation := Vector{}
 
 	//For each boid update positions
 	for i, b := range s.Boids {
+		cohesion := Vector{}
+		separation := Vector{}
+		alignment := Vector{}
 
 		cohesion = s.CohesionForBoid(i)
+		separation = s.SeparationForBoid(i)
+		alignment = s.AlignmentForBoid(i)
 
 		//Update boid rules
 		//First cohesion
-		s.Boids[i].Velocity.Add(cohesion)
-
+		s.Boids[i].Velocity.X = s.Boids[i].Velocity.X + cohesion.X + separation.X + alignment.X
+		s.Boids[i].Velocity.Y = s.Boids[i].Velocity.Y + cohesion.Y + separation.Y + alignment.Y
 		//limit spped
-		//s.Boids[i].Velocity.LimitSpeed(s.Speed)
+		s.Boids[i].Velocity.LimitSpeed(s.Speed)
 
 		//Update position
-		s.Boids[i].X += (b.Velocity.X * s.Speed)
-		s.Boids[i].Y += (b.Velocity.Y * s.Speed)
+		s.Boids[i].X += b.Velocity.X
+		s.Boids[i].Y += b.Velocity.Y
 
 		//Limit borders
 
@@ -90,6 +101,7 @@ func (s *Scene) UpdateBoids() {
 }
 
 func (s *Scene) CohesionForBoid(i int) Vector {
+
 	sum := Vector{}
 	var count = 0
 
@@ -103,7 +115,6 @@ func (s *Scene) CohesionForBoid(i int) Vector {
 			d := distance.Magnitude()
 
 			if d > 0 && d < s.Radius {
-
 				sum.X += s.Boids[j].X
 				sum.Y += s.Boids[j].Y
 				count += 1
@@ -116,14 +127,12 @@ func (s *Scene) CohesionForBoid(i int) Vector {
 		sum.X /= float64(count)
 		sum.Y /= float64(count)
 
-		//And Steer
-		steer := Vector{}
+		//a vector pointing from the location to the desired target
+		desired := Vector{}
+		desired.X = sum.X - s.Boids[i].X
+		desired.Y = sum.Y - s.Boids[i].Y
 
-		//a vector pointing from the location to the target
-		desired := Vector{sum.X, sum.Y}
-		location := Vector{s.Boids[i].X, s.Boids[i].Y}
-
-		desired.Sub(location)
+		//Distance from the target is the magnitude  of the vector
 		d := desired.Magnitude()
 		if d > 0 {
 
@@ -131,15 +140,104 @@ func (s *Scene) CohesionForBoid(i int) Vector {
 			desired.X = desired.X * s.Speed
 			desired.Y = desired.Y * s.Speed
 
-			steer = desired
-			steer.Sub(s.Boids[i].Velocity)
-			steer.LimitSpeed(s.Speed)
+			//And Steer
+			steer := Vector{}
+
+			steer.X = (desired.X - s.Boids[i].Velocity.X) * s.CohesionWeight
+			steer.Y = (desired.Y - s.Boids[i].Velocity.Y) * s.CohesionWeight
 
 			return steer
+		} else {
+			return Vector{0.0, 0.0}
 		}
 
 	}
 
+	sum.X *= s.CohesionWeight
+	sum.Y *= s.CohesionWeight
+	return sum
+
+}
+
+func (s *Scene) SeparationForBoid(i int) Vector {
+
+	sum := Vector{}
+	var count = 0
+
+	for j := 0; j < len(s.Boids); j++ {
+
+		if j != i {
+			//calculate distance between boids
+			distance := Vector{}
+			distance.X = s.Boids[j].X - s.Boids[i].X
+			distance.Y = s.Boids[j].Y - s.Boids[i].Y
+			d := distance.Magnitude()
+
+			if (d < s.Distance) && (d > 0.0) {
+
+				diff := Vector{}
+				diff.X = s.Boids[i].X - s.Boids[j].X
+				diff.Y = s.Boids[i].Y - s.Boids[j].Y
+
+				diff.Normalise()
+
+				//weight by distance
+				diff.X /= d
+				diff.Y /= d
+
+				sum.X += diff.X
+				sum.Y += diff.Y
+
+				//separation.X = separation.X - ((distance.X / distance.Magnitude()) / d)
+				//separation.Y = separation.Y - ((distance.Y / distance.Magnitude()) / d)
+				count += 1
+			}
+		}
+	}
+
+	if count > 0 {
+		sum.X /= float64(count)
+		sum.Y /= float64(count)
+
+	}
+
+	sum.X *= s.SeparationWeight
+	sum.Y *= s.SeparationWeight
+	return sum
+
+}
+
+func (s *Scene) AlignmentForBoid(i int) Vector {
+
+	sum := Vector{}
+	var count = 0
+
+	for j := 0; j < len(s.Boids); j++ {
+
+		if j != i {
+			//calculate distance between boids
+			distance := Vector{}
+			distance.X = s.Boids[j].X - s.Boids[i].X
+			distance.Y = s.Boids[j].Y - s.Boids[i].Y
+			d := distance.Magnitude()
+
+			if (d < s.Radius) && (d > 0.0) {
+
+				sum.X += s.Boids[j].Velocity.X
+				sum.Y += s.Boids[j].Velocity.Y
+				count += 1
+			}
+		}
+	}
+
+	if count > 0 {
+		sum.X /= float64(count)
+		sum.Y /= float64(count)
+
+	}
+
+	sum.X *= s.AlignmentWeight
+	sum.Y *= s.AlignmentWeight
 	return sum
 
 }

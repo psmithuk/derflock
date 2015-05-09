@@ -45,7 +45,7 @@ func main() {
 	}
 	defer renderer.Destroy()
 
-	s := scene.NewScene(100, width, height)
+	s := scene.NewScene(200, width, height)
 
 	s.Boids[0].BoidKind = scene.BoidKind_LEADER
 
