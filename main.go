@@ -28,6 +28,30 @@ func main() {
 	var renderer *sdl.Renderer
 	var event sdl.Event
 	var err error
+
+	var deviceId portmidi.DeviceId
+	var outputStream *portmidi.Stream
+
+	useMidi := false
+
+	midiCount := portmidi.CountDevices()
+	for i := 0; i < midiCount; i++ {
+		d := portmidi.GetDeviceInfo(portmidi.DeviceId(i))
+		log.Println(i, d.Name, d.IsOutputAvailable)
+		if d.Name == "IAC Driver DerFlock" && d.IsOutputAvailable == true {
+			deviceId = portmidi.DeviceId(i)
+			log.Printf("%v\n", deviceId)
+			useMidi = true
+		}
+	}
+
+	if useMidi {
+		outputStream, err = portmidi.NewOutputStream(deviceId, 1024, 0)
+		if err != nil {
+			log.Fatalf("Failed open new midi output: %s\n", err)
+		}
+	}
+
 	running := true
 
 	err = sdl.Init(sdl.INIT_VIDEO)
@@ -53,9 +77,6 @@ func main() {
 	s.AddLeader()
 	s.AddLeader()
 	s.AddLeader()
-	//s.Boids[0].BoidKind = scene.BoidKind_LEADER
-	//s.Boids[1].BoidKind = scene.BoidKind_LEADER
-	//s.Boids[2].BoidKind = scene.BoidKind_LEADER
 
 	// main loop
 	for running {
@@ -103,8 +124,14 @@ func main() {
 		s.UpdateBoids()
 		events := s.UpdateTriggers()
 
-		if len(events) > 0 {
-			log.Println(events)
+		if useMidi && len(events) > 0 {
+			for _, e := range events {
+				if e.TriggerEventType == scene.TriggerEventType_ON {
+					outputStream.WriteShort(0x90, int64(e.Note), 100)
+				} else if e.TriggerEventType == scene.TriggerEventType_OFF {
+					outputStream.WriteShort(0x80, int64(e.Note), 100)
+				}
+			}
 		}
 
 		// clear the screen
