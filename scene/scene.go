@@ -2,7 +2,6 @@ package scene
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -253,8 +252,9 @@ func (s *Scene) AlignmentForBoid(i int) Vector {
 
 }
 
-func (s *Scene) UpdateTriggers() {
+func (s *Scene) UpdateTriggers() []TriggerEvent {
 
+	events := make([]TriggerEvent, 0)
 	// clear trigger state
 	for j := range s.Triggers {
 		s.Triggers[j].Active = false
@@ -273,14 +273,22 @@ func (s *Scene) UpdateTriggers() {
 
 	// change in state should result in on of off messages
 	for j := range s.Triggers {
-		e := s.Triggers[j].StateTransition()
-		switch e {
-		case TriggerEvent_ON:
-			log.Println(s.Triggers[j].Note, "ON")
-		case TriggerEvent_OFF:
-			log.Println(s.Triggers[j].Note, "OFF")
+
+		te := TriggerEvent{}
+		te.TriggerEventType = s.Triggers[j].StateTransition()
+		te.Note = s.Triggers[j].Note
+		te.Channel = s.Triggers[j].Channel
+
+		switch te.TriggerEventType {
+		case TriggerEventType_OFF:
+			events = append(events, te)
+		case TriggerEventType_ON:
+			events = append(events, te)
+			// log.Println(s.Triggers[j].Note, "OFF")
 		}
 	}
+
+	return events
 }
 
 func (s *Scene) AddBoid(b Boid) {

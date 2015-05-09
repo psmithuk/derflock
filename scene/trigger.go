@@ -10,12 +10,18 @@ type Trigger struct {
 	PreviousState  bool
 }
 
-type TriggerEvent int32
+type TriggerEventType int32
+
+type TriggerEvent struct {
+	TriggerEventType TriggerEventType
+	Channel          int32
+	Note             int32
+}
 
 const (
-	TriggerEvent_NONE TriggerEvent = 0
-	TriggerEvent_ON   TriggerEvent = 1
-	TriggerEvent_OFF  TriggerEvent = 2
+	TriggerEventType_NONE TriggerEventType = 0
+	TriggerEventType_ON   TriggerEventType = 1
+	TriggerEventType_OFF  TriggerEventType = 2
 )
 
 func NewTriggerGrid(squareSize int, density float64) []Trigger {
@@ -33,6 +39,7 @@ func NewTriggerGrid(squareSize int, density float64) []Trigger {
 			trigger.X2 = (trigger.X1 + (density * triggerVoid)) + offset
 			trigger.Y2 = (trigger.Y1 + (density * triggerVoid)) + offset
 			trigger.Note = int32((row * 16) + col)
+			trigger.Channel = 1
 			t[(row*squareSize)+col] = trigger
 		}
 	}
@@ -40,13 +47,24 @@ func NewTriggerGrid(squareSize int, density float64) []Trigger {
 	return t
 }
 
-func (t *Trigger) StateTransition() TriggerEvent {
-	e := TriggerEvent_NONE
+func (t TriggerEventType) String() string {
+	switch t {
+	case TriggerEventType_ON:
+		return "ON"
+	case TriggerEventType_OFF:
+		return "OFF"
+	default:
+		return "-"
+	}
+}
+
+func (t *Trigger) StateTransition() TriggerEventType {
+	e := TriggerEventType_NONE
 	if t.Active != t.PreviousState {
 		if t.Active {
-			e = TriggerEvent_ON
+			e = TriggerEventType_ON
 		} else {
-			e = TriggerEvent_OFF
+			e = TriggerEventType_OFF
 		}
 		t.PreviousState = t.Active
 	}

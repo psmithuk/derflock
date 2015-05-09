@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/psmithuk/derflock/scene"
+	"github.com/rakyll/portmidi"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -18,6 +19,8 @@ func init() {
 	runtime.LockOSThread()
 
 	rand.Seed(time.Now().UnixNano())
+
+	portmidi.Initialize()
 }
 
 func main() {
@@ -74,7 +77,11 @@ func main() {
 		}
 
 		s.UpdateBoids()
-		s.UpdateTriggers()
+		events := s.UpdateTriggers()
+
+		if len(events) > 0 {
+			log.Println(events)
+		}
 
 		// clear the screen
 		renderer.SetDrawColor(0, 0, 0, 255)
