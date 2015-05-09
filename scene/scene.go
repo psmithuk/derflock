@@ -35,6 +35,8 @@ const (
 	DEFAULT_COHESION_WEIGHT   = 0.1
 	DEFAULT_ALIGNMENT_WEIGHT  = 1
 	DEFAULT_SEPARATION_WEIGHT = 0.1
+
+	DEFAULT_LEADER_COUNT = 3
 )
 
 func NewScene(boidCount int32, w, h int32) Scene {
@@ -64,9 +66,11 @@ func NewScene(boidCount int32, w, h int32) Scene {
 	return s
 }
 func (s *Scene) AddLeader() {
+	if s.LeaderCount < len(s.Boids) {
 
-	s.Boids[s.LeaderCount].BoidKind = BoidKind_LEADER
-	s.LeaderCount += 1
+		s.Boids[s.LeaderCount].BoidKind = BoidKind_LEADER
+		s.LeaderCount += 1
+	}
 }
 
 func (s *Scene) AllLeaders() {
@@ -87,6 +91,14 @@ func (s *Scene) RestoreDefault() {
 	s.CohesionWeight = DEFAULT_COHESION_WEIGHT
 	s.AlignmentWeight = DEFAULT_ALIGNMENT_WEIGHT
 	s.SeparationWeight = DEFAULT_SEPARATION_WEIGHT
+
+	//Now restore Leader count
+	for j := DEFAULT_LEADER_COUNT; j < len(s.Boids); j++ {
+		s.Boids[j].BoidKind = BoidKind_NORMAL
+
+	}
+
+	s.LeaderCount = DEFAULT_LEADER_COUNT
 }
 
 func (s *Scene) Draw(w, h int32, renderer *sdl.Renderer) {
