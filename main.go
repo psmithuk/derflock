@@ -45,7 +45,9 @@ func main() {
 	}
 	defer renderer.Destroy()
 
-	scene := scene.NewScene(100, width, height)
+	s := scene.NewScene(100, width, height)
+
+	s.Boids[0].BoidKind = scene.BoidKind_LEADER
 
 	// main loop
 	for running {
@@ -63,15 +65,15 @@ func main() {
 			}
 		}
 
-		scene.UpdateBoids()
-		scene.UpdateTriggers()
+		s.UpdateBoids()
+		s.UpdateTriggers()
 
 		// clear the screen
 		renderer.SetDrawColor(0, 0, 0, 255)
 		renderer.Clear()
 
 		// render the things
-		scene.Draw(width, height, renderer)
+		s.Draw(width, height, renderer)
 
 		renderer.Present()
 	}

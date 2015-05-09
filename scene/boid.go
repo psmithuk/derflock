@@ -42,7 +42,13 @@ func NewRandomBoid() Boid {
 func (b *Boid) drawBoid(w, h int32, renderer *sdl.Renderer) {
 	x, y := b.boidPosWithinBounds(w, h)
 
-	renderer.SetDrawColor(255, 255, 255, 255)
+	switch b.BoidKind {
+	case BoidKind_LEADER:
+		renderer.SetDrawColor(255, 255, 0, 255)
+	default:
+		renderer.SetDrawColor(255, 255, 255, 255)
+
+	}
 
 	// direction
 	a := b.Velocity.HeadingAngle()
