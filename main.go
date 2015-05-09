@@ -113,6 +113,9 @@ func main() {
 				case sdl.K_l:
 					s.AddLeader()
 					log.Println("Adding Leader")
+				case sdl.K_PERIOD:
+					s.RemoveLeader()
+					log.Println("Remove Leader")
 				case sdl.K_o:
 					s.AllLeaders()
 					log.Println("All Leaders")

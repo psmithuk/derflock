@@ -65,10 +65,22 @@ func NewScene(boidCount int32, w, h int32) Scene {
 	return s
 }
 func (s *Scene) AddLeader() {
+
 	if s.LeaderCount < len(s.Boids) {
 
 		s.Boids[s.LeaderCount].BoidKind = BoidKind_LEADER
 		s.LeaderCount += 1
+	}
+}
+
+func (s *Scene) RemoveLeader() {
+	if s.LeaderCount > 0 {
+
+		s.Boids[s.LeaderCount].BoidKind = BoidKind_NORMAL
+		s.LeaderCount -= 1
+	} else {
+		s.Boids[s.LeaderCount].BoidKind = BoidKind_NORMAL
+		s.LeaderCount = 0
 	}
 }
 
@@ -77,7 +89,7 @@ func (s *Scene) AllLeaders() {
 	for j := s.LeaderCount; j < len(s.Boids); j++ {
 
 		s.Boids[j].BoidKind = BoidKind_LEADER
-		s.LeaderCount += 1
+		s.LeaderCount = len(s.Boids) - 1
 
 	}
 
@@ -92,6 +104,11 @@ func (s *Scene) RestoreDefault() {
 	s.SeparationWeight = DEFAULT_SEPARATION_WEIGHT
 
 	//Now restore Leader count
+	for j := 0; j <= DEFAULT_LEADER_COUNT; j++ {
+		s.Boids[j].BoidKind = BoidKind_LEADER
+
+	}
+
 	for j := DEFAULT_LEADER_COUNT; j < len(s.Boids); j++ {
 		s.Boids[j].BoidKind = BoidKind_NORMAL
 
