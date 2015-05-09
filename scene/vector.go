@@ -28,3 +28,11 @@ func (v Vector) Div(a float64) {
 	v.Y /= a
 	return
 }
+
+func (v Vector) Normalise() Vector {
+	m := v.Magnitude()
+	return Vector{
+		X: v.X / m,
+		Y: v.Y / m,
+	}
+}
