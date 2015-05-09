@@ -2,17 +2,22 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"runtime"
+	"time"
 
+	"github.com/psmithuk/derflock/scene"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 var winTitle string = "Der Flock"
-var winWidth, winHeight int = 900, 900
+var width, height int32 = 720, 720
 
 func init() {
 	runtime.GOMAXPROCS(2)
 	runtime.LockOSThread()
+
+	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {
@@ -28,7 +33,7 @@ func main() {
 	}
 
 	window, err = sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		winWidth, winHeight, sdl.WINDOW_SHOWN)
+		int(width), int(height), sdl.WINDOW_SHOWN)
 	if err != nil {
 		log.Fatalf("Failed to create window: %s\n", err)
 	}
@@ -39,6 +44,8 @@ func main() {
 		log.Fatalf("Failed to create renderer: %s\n", err)
 	}
 	defer renderer.Destroy()
+
+	scene := scene.NewScene(100, width, height)
 
 	// main loop
 	for running {
@@ -56,13 +63,15 @@ func main() {
 			}
 		}
 
-		// black background
+		scene.UpdateBoids()
+		scene.UpdateTriggers()
+
+		// clear the screen
 		renderer.SetDrawColor(0, 0, 0, 255)
 		renderer.Clear()
 
 		// render the things
-		renderer.SetDrawColor(255, 255, 255, 255)
-		renderer.DrawPoint(winHeight/2, winWidth/2)
+		scene.Draw(width, height, renderer)
 
 		renderer.Present()
 	}
