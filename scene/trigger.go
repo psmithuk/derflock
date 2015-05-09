@@ -1,10 +1,6 @@
 package scene
 
-import (
-	"log"
-
-	"github.com/veandco/go-sdl2/sdl"
-)
+import "github.com/veandco/go-sdl2/sdl"
 
 type Trigger struct {
 	Channel        int32
@@ -18,11 +14,7 @@ func NewTriggerGrid(squareSize int, density float64) []Trigger {
 
 	// the space which the trigger will occupy
 	triggerVoid := 1.0 / float64(squareSize)
-
-	offset := 0.005 //((float64(squareSize) * (triggerVoid / density)) - 1.0) / 2.0
-	// triggerVoid *= density
-
-	log.Println(offset)
+	offset := 0.005
 
 	for row := 0; row < squareSize; row++ {
 		for col := 0; col < squareSize; col++ {

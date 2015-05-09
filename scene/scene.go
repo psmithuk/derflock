@@ -43,6 +43,10 @@ func NewScene(boidCount int32, w, h int32) Scene {
 	s.AlignmentWeight = 1
 	s.SeparationWeight = 0.1
 
+	s.ShowActivePads = true
+	s.ShowGrid = true
+	s.ShowHUD = true
+
 	s.Triggers = NewTriggerGrid(8, 0.8)
 
 	return s
@@ -249,14 +253,18 @@ func (s *Scene) AlignmentForBoid(i int) Vector {
 }
 
 func (s *Scene) UpdateTriggers() {
-	for _, boid := range s.Boids {
+
+	// clear trigger state
+	for j := range s.Triggers {
+		s.Triggers[j].Active = false
+	}
+
+	for i, boid := range s.Boids {
 		// only trigger the leaders
-		if boid.BoidKind == BoidKind_LEADER {
+		if s.Boids[i].BoidKind == BoidKind_LEADER {
 			for j, t := range s.Triggers {
 				if boid.X >= t.X1 && boid.X <= t.X2 && boid.Y >= t.Y1 && boid.Y <= t.Y2 {
 					s.Triggers[j].Active = true
-				} else {
-					s.Triggers[j].Active = false
 				}
 			}
 		}
