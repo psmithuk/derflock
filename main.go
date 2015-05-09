@@ -50,9 +50,12 @@ func main() {
 
 	s := scene.NewScene(200, width, height)
 
-	s.Boids[0].BoidKind = scene.BoidKind_LEADER
-	s.Boids[1].BoidKind = scene.BoidKind_LEADER
-	s.Boids[2].BoidKind = scene.BoidKind_LEADER
+	s.AddLeader()
+	s.AddLeader()
+	s.AddLeader()
+	//s.Boids[0].BoidKind = scene.BoidKind_LEADER
+	//s.Boids[1].BoidKind = scene.BoidKind_LEADER
+	//s.Boids[2].BoidKind = scene.BoidKind_LEADER
 
 	// main loop
 	for running {
@@ -71,6 +74,27 @@ func main() {
 					s.ShowGrid = !s.ShowGrid
 				case sdl.K_3:
 					s.ShowActivePads = !s.ShowActivePads
+				case sdl.K_UP:
+					s.Distance += 0.001
+					log.Println("Further apart")
+				case sdl.K_DOWN:
+					s.Distance -= 0.001
+					log.Println("Closer together")
+				case sdl.K_RIGHT:
+					s.Speed = s.Speed + s.Speed*0.2
+					log.Println("Faster")
+				case sdl.K_LEFT:
+					s.Speed = s.Speed - s.Speed*0.2
+					log.Println("Slower")
+				case sdl.K_d:
+					s.RestoreDefault()
+					log.Println("Set Default Values")
+				case sdl.K_l:
+					s.AddLeader()
+					log.Println("Adding Leader")
+				case sdl.K_o:
+					s.AllLeaders()
+					log.Println("All Leaders")
 					// TODO: keyboard actions
 				}
 			}

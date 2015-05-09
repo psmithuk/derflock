@@ -16,6 +16,7 @@ type Scene struct {
 	CohesionWeight   float64
 	AlignmentWeight  float64
 	SeparationWeight float64
+	LeaderCount      int
 
 	ShowGrid       bool
 	ShowHUD        bool
@@ -24,6 +25,18 @@ type Scene struct {
 	Width, Height int32
 	TheBigBang    time.Time
 }
+
+const (
+	DEFAULT_SPEED    = 0.004
+	DEFAULT_DISTANCE = 0.01
+	DEFAULT_RADIUS   = 0.1
+
+	DEFAULT_COHESION_WEIGHT   = 0.1
+	DEFAULT_ALIGNMENT_WEIGHT  = 1
+	DEFAULT_SEPARATION_WEIGHT = 0.1
+
+	DEFAULT_LEADER_COUNT = 3
+)
 
 func NewScene(boidCount int32, w, h int32) Scene {
 	s := Scene{}
@@ -35,13 +48,13 @@ func NewScene(boidCount int32, w, h int32) Scene {
 		s.Boids[i] = NewRandomBoid()
 	}
 
-	s.Speed = 0.004
-	s.Distance = 0.01
-	s.Radius = 0.1
+	s.Speed = DEFAULT_SPEED
+	s.Distance = DEFAULT_DISTANCE
+	s.Radius = DEFAULT_RADIUS
 
-	s.CohesionWeight = 0.1
-	s.AlignmentWeight = 1
-	s.SeparationWeight = 0.1
+	s.CohesionWeight = DEFAULT_COHESION_WEIGHT
+	s.AlignmentWeight = DEFAULT_ALIGNMENT_WEIGHT
+	s.SeparationWeight = DEFAULT_SEPARATION_WEIGHT
 
 	s.ShowActivePads = true
 	s.ShowGrid = true
@@ -50,6 +63,41 @@ func NewScene(boidCount int32, w, h int32) Scene {
 	s.Triggers = NewTriggerGrid(8, 0.8)
 
 	return s
+}
+func (s *Scene) AddLeader() {
+	if s.LeaderCount < len(s.Boids) {
+
+		s.Boids[s.LeaderCount].BoidKind = BoidKind_LEADER
+		s.LeaderCount += 1
+	}
+}
+
+func (s *Scene) AllLeaders() {
+
+	for j := s.LeaderCount; j < len(s.Boids); j++ {
+
+		s.Boids[j].BoidKind = BoidKind_LEADER
+		s.LeaderCount += 1
+
+	}
+
+}
+
+func (s *Scene) RestoreDefault() {
+	s.Speed = DEFAULT_SPEED
+	s.Distance = DEFAULT_DISTANCE
+	s.Radius = DEFAULT_RADIUS
+	s.CohesionWeight = DEFAULT_COHESION_WEIGHT
+	s.AlignmentWeight = DEFAULT_ALIGNMENT_WEIGHT
+	s.SeparationWeight = DEFAULT_SEPARATION_WEIGHT
+
+	//Now restore Leader count
+	for j := DEFAULT_LEADER_COUNT; j < len(s.Boids); j++ {
+		s.Boids[j].BoidKind = BoidKind_NORMAL
+
+	}
+
+	s.LeaderCount = DEFAULT_LEADER_COUNT
 }
 
 func (s *Scene) Draw(w, h int32, renderer *sdl.Renderer) {
