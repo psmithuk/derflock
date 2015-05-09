@@ -78,6 +78,9 @@ func main() {
 	s.AddLeader()
 	s.AddLeader()
 
+	// send note off for all the triggers
+	Panic(outputStream, s)
+
 	// main loop
 	for running {
 
@@ -109,17 +112,21 @@ func main() {
 					log.Println("Slower")
 				case sdl.K_d:
 					s.RestoreDefault()
+					Panic(outputStream, s)
 					log.Println("Set Default Values")
 				case sdl.K_l:
 					s.AddLeader()
 					log.Println("Adding Leader")
 				case sdl.K_PERIOD:
 					s.RemoveLeader()
+					Panic(outputStream, s)
 					log.Println("Remove Leader")
 				case sdl.K_o:
 					s.AllLeaders()
 					log.Println("All Leaders")
-					// TODO: keyboard actions
+				case sdl.K_p:
+					Panic(outputStream, s)
+					log.Println("PANIC")
 				}
 			}
 		}
@@ -145,5 +152,14 @@ func main() {
 		s.Draw(width, height, renderer)
 
 		renderer.Present()
+	}
+}
+
+func Panic(outputStream *portmidi.Stream, s scene.Scene) {
+	// write a note off for all the trigger pads
+	if outputStream != nil {
+		for i := range s.Triggers {
+			outputStream.WriteShort(0x80, int64(s.Triggers[i].Note), 100)
+		}
 	}
 }

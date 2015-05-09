@@ -38,7 +38,7 @@ func NewTriggerGrid(squareSize int, density float64) []Trigger {
 			trigger.Y1 = (float64(col) * triggerVoid) + offset
 			trigger.X2 = (trigger.X1 + (density * triggerVoid)) + offset
 			trigger.Y2 = (trigger.Y1 + (density * triggerVoid)) + offset
-			trigger.Note = int32((row * 16) + col)
+			trigger.Note = 24 + int32((row*squareSize)+col)
 			trigger.Channel = 1
 			t[(row*squareSize)+col] = trigger
 		}
@@ -80,8 +80,8 @@ func (t *Trigger) drawTrigger(w, h int32, renderer *sdl.Renderer, showActive, sh
 	}
 
 	if t.Active && showActive {
-		renderer.SetDrawColor(240, 240, 100, 255)
-		renderer.FillRect(r)
+		renderer.SetDrawColor(100, 240, 100, 100)
+		renderer.DrawRect(r)
 	}
 
 	if showGrid {
