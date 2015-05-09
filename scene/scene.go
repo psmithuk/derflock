@@ -2,6 +2,7 @@ package scene
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -267,6 +268,17 @@ func (s *Scene) UpdateTriggers() {
 					s.Triggers[j].Active = true
 				}
 			}
+		}
+	}
+
+	// change in state should result in on of off messages
+	for j := range s.Triggers {
+		e := s.Triggers[j].StateTransition()
+		switch e {
+		case TriggerEvent_ON:
+			log.Println(s.Triggers[j].Note, "ON")
+		case TriggerEvent_OFF:
+			log.Println(s.Triggers[j].Note, "OFF")
 		}
 	}
 }

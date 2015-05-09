@@ -7,7 +7,16 @@ type Trigger struct {
 	Note           int32
 	X1, Y1, X2, Y2 float64
 	Active         bool
+	PreviousState  bool
 }
+
+type TriggerEvent int32
+
+const (
+	TriggerEvent_NONE TriggerEvent = 0
+	TriggerEvent_ON   TriggerEvent = 1
+	TriggerEvent_OFF  TriggerEvent = 2
+)
 
 func NewTriggerGrid(squareSize int, density float64) []Trigger {
 	t := make([]Trigger, squareSize*squareSize)
@@ -31,6 +40,19 @@ func NewTriggerGrid(squareSize int, density float64) []Trigger {
 	return t
 }
 
+func (t *Trigger) StateTransition() TriggerEvent {
+	e := TriggerEvent_NONE
+	if t.Active != t.PreviousState {
+		if t.Active {
+			e = TriggerEvent_ON
+		} else {
+			e = TriggerEvent_OFF
+		}
+		t.PreviousState = t.Active
+	}
+	return e
+}
+
 func (t *Trigger) drawTrigger(w, h int32, renderer *sdl.Renderer, showActive, showGrid bool) {
 	r := &sdl.Rect{
 		X: int32(float64(w) * t.X1),
@@ -49,5 +71,4 @@ func (t *Trigger) drawTrigger(w, h int32, renderer *sdl.Renderer, showActive, sh
 		renderer.DrawRect(r)
 
 	}
-
 }
