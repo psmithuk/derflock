@@ -29,6 +29,17 @@ func (v Vector) Div(a float64) {
 	return
 }
 
+func (v Vector) LimitSpeed(max_speed float64) {
+
+	mod := v.Magnitude()
+	if mod > max_speed {
+		v.X = (v.X / mod) * max_speed
+		v.Y = (v.Y / mod) * max_speed
+
+	}
+	return
+}
+
 func (v Vector) Normalise() Vector {
 	m := v.Magnitude()
 	return Vector{
