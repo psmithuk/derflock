@@ -9,13 +9,15 @@ import (
 	"github.com/psmithuk/derflock/scene"
 	"github.com/rakyll/portmidi"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
 var winTitle string = "Der Flock"
 var width, height int32 = 720, 720
+var font *ttf.Font
 
 func init() {
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(3)
 	runtime.LockOSThread()
 
 	rand.Seed(time.Now().UnixNano())
@@ -48,7 +50,7 @@ func main() {
 	if useMidi {
 		outputStream, err = portmidi.NewOutputStream(deviceId, 1024, 0)
 		if err != nil {
-			log.Fatalf("Failed open new midi output: %s\n", err)
+			log.Fatalf("Failed open new midi output: %s", err)
 		}
 	}
 
@@ -72,8 +74,18 @@ func main() {
 	}
 	defer renderer.Destroy()
 
+	if ttf.Init() != 0 {
+		log.Fatalf("Failed to init ttf\n")
+	}
+
+	font, err = ttf.OpenFont("fonts/arcade_n.ttf", 24)
+	if err != nil {
+		log.Fatalf("Failed to open font: %s\n", err)
+	}
+
 	s := scene.NewScene(200, width, height)
 
+	// three leaders required for default triggers
 	s.AddLeader()
 	s.AddLeader()
 	s.AddLeader()
@@ -135,13 +147,26 @@ func main() {
 		events := s.UpdateTriggers()
 
 		if useMidi && len(events) > 0 {
-			for _, e := range events {
+			midiEvents := make([]portmidi.Event, len(events))
+			for i, e := range events {
+				note := abletonPushNoteMap[e.Note]
 				if e.TriggerEventType == scene.TriggerEventType_ON {
-					outputStream.WriteShort(0x90, int64(e.Note), 100)
+					midiEvents[i] = portmidi.Event{
+						Timestamp: portmidi.Time(),
+						Status:    0x90,
+						Data1:     note,
+						Data2:     127,
+					}
 				} else if e.TriggerEventType == scene.TriggerEventType_OFF {
-					outputStream.WriteShort(0x80, int64(e.Note), 100)
+					midiEvents[i] = portmidi.Event{
+						Timestamp: portmidi.Time(),
+						Status:    0x80,
+						Data1:     note,
+						Data2:     127,
+					}
 				}
 			}
+			outputStream.Write(midiEvents)
 		}
 
 		// clear the screen
@@ -149,17 +174,94 @@ func main() {
 		renderer.Clear()
 
 		// render the things
-		s.Draw(width, height, renderer)
-
+		s.Draw(width, height, renderer, font)
 		renderer.Present()
 	}
+
+	portmidi.Terminate()
 }
 
 func Panic(outputStream *portmidi.Stream, s scene.Scene) {
 	// write a note off for all the trigger pads
 	if outputStream != nil {
+
+		midiEvents := make([]portmidi.Event, len(s.Triggers))
 		for i := range s.Triggers {
-			outputStream.WriteShort(0x80, int64(s.Triggers[i].Note), 100)
+			note := abletonPushNoteMap[s.Triggers[i].Note]
+			midiEvents[i] = portmidi.Event{
+				Timestamp: portmidi.Time(),
+				Status:    0x80,
+				Data1:     note,
+				Data2:     127,
+			}
+
 		}
+		outputStream.Write(midiEvents)
 	}
 }
+
+var abletonPushNoteMap = map[int32]int64{
+	0:  64,
+	1:  65,
+	2:  66,
+	3:  67,
+	4:  96,
+	5:  97,
+	6:  98,
+	7:  99,
+	8:  60,
+	9:  61,
+	10: 62,
+	11: 63,
+	12: 92,
+	13: 93,
+	14: 94,
+	15: 95,
+	16: 56,
+	17: 57,
+	18: 58,
+	19: 59,
+	20: 88,
+	21: 89,
+	22: 90,
+	23: 91,
+	24: 52,
+	25: 53,
+	26: 54,
+	27: 55,
+	28: 84,
+	29: 85,
+	30: 86,
+	31: 87,
+	32: 48,
+	33: 49,
+	34: 50,
+	35: 51,
+	36: 80,
+	37: 81,
+	38: 82,
+	39: 83,
+	40: 44,
+	41: 45,
+	42: 46,
+	43: 47,
+	44: 76,
+	45: 77,
+	46: 78,
+	47: 79,
+	48: 40,
+	49: 41,
+	50: 42,
+	51: 43,
+	52: 72,
+	53: 73,
+	54: 74,
+	55: 75,
+	56: 36,
+	57: 37,
+	58: 38,
+	59: 39,
+	60: 68,
+	61: 69,
+	62: 70,
+	63: 71}

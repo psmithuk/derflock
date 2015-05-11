@@ -2,9 +2,11 @@ package scene
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
 type Scene struct {
@@ -56,14 +58,15 @@ func NewScene(boidCount int32, w, h int32) Scene {
 	s.AlignmentWeight = DEFAULT_ALIGNMENT_WEIGHT
 	s.SeparationWeight = DEFAULT_SEPARATION_WEIGHT
 
-	s.ShowActivePads = true
-	s.ShowGrid = true
-	s.ShowHUD = true
+	s.ShowActivePads = false
+	s.ShowGrid = false
+	s.ShowHUD = false
 
 	s.Triggers = NewTriggerGrid(8, 0.8)
 
 	return s
 }
+
 func (s *Scene) AddLeader() {
 
 	if s.LeaderCount < len(s.Boids) {
@@ -103,7 +106,7 @@ func (s *Scene) RestoreDefault() {
 	s.AlignmentWeight = DEFAULT_ALIGNMENT_WEIGHT
 	s.SeparationWeight = DEFAULT_SEPARATION_WEIGHT
 
-	//Now restore Leader count
+	// restore leader count
 	for j := 0; j <= DEFAULT_LEADER_COUNT; j++ {
 		s.Boids[j].BoidKind = BoidKind_LEADER
 
@@ -117,9 +120,10 @@ func (s *Scene) RestoreDefault() {
 	s.LeaderCount = DEFAULT_LEADER_COUNT
 }
 
-func (s *Scene) Draw(w, h int32, renderer *sdl.Renderer) {
+func (s *Scene) Draw(w, h int32, renderer *sdl.Renderer, font *ttf.Font) {
 	s.drawTriggers(w, h, renderer)
 	s.drawBoids(w, h, renderer)
+	s.drawHUD(w, h, renderer, font)
 }
 
 func (s *Scene) drawBoids(w, h int32, renderer *sdl.Renderer) {
@@ -146,18 +150,18 @@ func (s *Scene) UpdateBoids() {
 		separation = s.SeparationForBoid(i)
 		alignment = s.AlignmentForBoid(i)
 
-		//Update boid rules
-		//First cohesion
+		// update boid rules
 		s.Boids[i].Velocity.X = s.Boids[i].Velocity.X + cohesion.X + separation.X + alignment.X
 		s.Boids[i].Velocity.Y = s.Boids[i].Velocity.Y + cohesion.Y + separation.Y + alignment.Y
-		//limit spped
+
+		// limit spped
 		s.Boids[i].Velocity.LimitSpeed(s.Speed)
 
-		//Update position
+		// update positions according to new velocity
 		s.Boids[i].X += b.Velocity.X
 		s.Boids[i].Y += b.Velocity.Y
 
-		//Limit borders
+		// wrap around borders
 
 		if s.Boids[i].X >= 1.0 {
 			s.Boids[i].X = 0
@@ -185,7 +189,7 @@ func (s *Scene) CohesionForBoid(i int) Vector {
 	for j := 0; j < len(s.Boids); j++ {
 
 		if j != i {
-			//calculate distance between boids
+			// calculate distance between boids
 			distance := Vector{}
 			distance.X = s.Boids[j].X - s.Boids[i].X
 			distance.Y = s.Boids[j].Y - s.Boids[i].Y
@@ -200,40 +204,39 @@ func (s *Scene) CohesionForBoid(i int) Vector {
 	}
 
 	if count > 0 {
-		//Average Sum
+		// average Sum
 		sum.X /= float64(count)
 		sum.Y /= float64(count)
 
-		//a vector pointing from the location to the desired target
+		// vector pointing from the location to the desired target
 		desired := Vector{}
 		desired.X = sum.X - s.Boids[i].X
 		desired.Y = sum.Y - s.Boids[i].Y
 
-		//Distance from the target is the magnitude  of the vector
+		// distance from the target is the magnitude  of the vector
 		d := desired.Magnitude()
-		if d > 0 {
 
+		if d > 0 {
 			desired.Normalise()
 			desired.X = desired.X * s.Speed
 			desired.Y = desired.Y * s.Speed
 
-			//And Steer
+			// and Steer
 			steer := Vector{}
-
 			steer.X = (desired.X - s.Boids[i].Velocity.X) * s.CohesionWeight
 			steer.Y = (desired.Y - s.Boids[i].Velocity.Y) * s.CohesionWeight
 
 			return steer
+
 		} else {
 			return Vector{0.0, 0.0}
 		}
-
 	}
 
 	sum.X *= s.CohesionWeight
 	sum.Y *= s.CohesionWeight
-	return sum
 
+	return sum
 }
 
 func (s *Scene) SeparationForBoid(i int) Vector {
@@ -242,12 +245,13 @@ func (s *Scene) SeparationForBoid(i int) Vector {
 	var count = 0
 
 	for j := 0; j < len(s.Boids); j++ {
-
 		if j != i {
-			//calculate distance between boids
+			// calculate distance between boids
+
 			distance := Vector{}
 			distance.X = s.Boids[j].X - s.Boids[i].X
 			distance.Y = s.Boids[j].Y - s.Boids[i].Y
+
 			d := distance.Magnitude()
 
 			if (d < s.Distance) && (d > 0.0) {
@@ -258,7 +262,7 @@ func (s *Scene) SeparationForBoid(i int) Vector {
 
 				diff.Normalise()
 
-				//weight by distance
+				// weight by distance
 				diff.X /= d
 				diff.Y /= d
 
@@ -273,13 +277,12 @@ func (s *Scene) SeparationForBoid(i int) Vector {
 	if count > 0 {
 		sum.X /= float64(count)
 		sum.Y /= float64(count)
-
 	}
 
 	sum.X *= s.SeparationWeight
 	sum.Y *= s.SeparationWeight
-	return sum
 
+	return sum
 }
 
 func (s *Scene) AlignmentForBoid(i int) Vector {
@@ -290,14 +293,13 @@ func (s *Scene) AlignmentForBoid(i int) Vector {
 	for j := 0; j < len(s.Boids); j++ {
 
 		if j != i {
-			//calculate distance between boids
+			// calculate distance between boids
 			distance := Vector{}
 			distance.X = s.Boids[j].X - s.Boids[i].X
 			distance.Y = s.Boids[j].Y - s.Boids[i].Y
 			d := distance.Magnitude()
 
 			if (d < s.Radius) && (d > 0.0) {
-
 				sum.X += s.Boids[j].Velocity.X
 				sum.Y += s.Boids[j].Velocity.Y
 				count += 1
@@ -308,13 +310,12 @@ func (s *Scene) AlignmentForBoid(i int) Vector {
 	if count > 0 {
 		sum.X /= float64(count)
 		sum.Y /= float64(count)
-
 	}
 
 	sum.X *= s.AlignmentWeight
 	sum.Y *= s.AlignmentWeight
-	return sum
 
+	return sum
 }
 
 func (s *Scene) UpdateTriggers() []TriggerEvent {
@@ -349,7 +350,6 @@ func (s *Scene) UpdateTriggers() []TriggerEvent {
 			events = append(events, te)
 		case TriggerEventType_ON:
 			events = append(events, te)
-			// log.Println(s.Triggers[j].Note, "OFF")
 		}
 	}
 
@@ -362,4 +362,37 @@ func (s *Scene) AddBoid(b Boid) {
 
 func (s *Scene) String() string {
 	return fmt.Sprintf("Boid count: %d", len(s.Boids))
+}
+
+func (s *Scene) drawHUD(w, h int32, renderer *sdl.Renderer, font *ttf.Font) {
+
+	if !s.ShowHUD {
+		return
+	}
+	colorRedSemiTrans := sdl.Color{180, 0, 0, 100}
+	colorRed := sdl.Color{180, 0, 0, 255}
+
+	var lineHeight int32 = 24 + 8
+	var xOffset int32 = 20
+	var yOffset int32 = 20
+
+	renderText(fmt.Sprintf("Boids:      %d", len(s.Boids)), xOffset, yOffset, &colorRedSemiTrans, renderer, font)
+	renderText(fmt.Sprintf("Speed:      %.3f", s.Speed), xOffset, yOffset+(lineHeight*2), &colorRed, renderer, font)
+	renderText(fmt.Sprintf("Distance:   %.3f", s.Distance), xOffset, yOffset+(lineHeight*3), &colorRed, renderer, font)
+	renderText(fmt.Sprintf("Radius:     %.3f", s.Radius), xOffset, yOffset+(lineHeight*4), &colorRed, renderer, font)
+	renderText(fmt.Sprintf("Cohesion:   %.3f", s.CohesionWeight), xOffset, yOffset+(lineHeight*5), &colorRed, renderer, font)
+	renderText(fmt.Sprintf("Alignment:  %.3f", s.AlignmentWeight), xOffset, yOffset+(lineHeight*6), &colorRed, renderer, font)
+	renderText(fmt.Sprintf("Separation: %.3f", s.SeparationWeight), xOffset, yOffset+(lineHeight*7), &colorRed, renderer, font)
+}
+
+func renderText(text string, x, y int32, color *sdl.Color, renderer *sdl.Renderer, font *ttf.Font) {
+	surface := font.RenderText_Solid(text, *color)
+	texture, err := renderer.CreateTextureFromSurface(surface)
+	if err != nil {
+		log.Fatalf("Failed to create texture: %s\n", err)
+	}
+	src := sdl.Rect{0, 0, surface.W, surface.H}
+	dst := sdl.Rect{x, y, surface.W, surface.H}
+
+	renderer.Copy(texture, &src, &dst)
 }
